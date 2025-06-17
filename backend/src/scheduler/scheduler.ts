@@ -21,6 +21,7 @@ export function startScheduler() {
       await notificationQueue.add(
         "send",
         {
+          userId: notif.userId,
           to: notif.to,
           channel: notif.channel,
           message: notif.message,

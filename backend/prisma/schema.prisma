@@ -7,23 +7,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  notifications NotificationLog[]
+  scheduled     ScheduledNotification[]
+  bulkUploads   BulkUpload[]
+  
+  @@map("users")
+}
+
 model NotificationLog {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
+  userId    String
   to        String
   channel   String   // "email", "sms", "in-app"
   message   String
-  status    String   // "success", "failed"
+  status    String   // "success", "failed", "retrying"
   error     String?  // Optional, for error messages
-  attempt   Int      @default(1)  // ✅ New: track retry count
+  attempt   Int      @default(1)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notification_logs")
 }
 
 model ScheduledNotification {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
+  userId    String
   to        String
   channel   String
   message   String
   sendAt    DateTime
-  status    String   @default("pending") // "pending", "queued", "sent"
+  status    String   @default("pending") // "pending", "queued", "sent", "failed"
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("scheduled_notifications")
+}
+
+model BulkUpload {
+  id          String   @id @default(cuid())
+  userId      String
+  filename    String
+  totalCount  Int
+  successCount Int     @default(0)
+  failedCount  Int     @default(0)
+  status      String   @default("processing") // "processing", "completed", "failed"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("bulk_uploads")
 }
